@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Analyze your browser's digital footprint. See what websites can detect about your device, network, and hardware without your permission.">
+    <meta name="keywords" content="browser fingerprint, device info, ip address, webgl, canvas fingerprint, privacy tool">
+    <meta property="og:title" content="Browser Deep Scan | Digital Mirror">
+    <meta property="og:description" content="View your digital reflection. See your IP, Fingerprint, and Hardware info.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#111827">
+    
+    <title>Browser Deep Scan | Deployment Ready</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Favicon (Inline SVG) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%233b82f6%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><circle cx=%2212%22 cy=%2212%22 r=%223%22/><path d=%22M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z%22/></svg>">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .data-card {
+            transition: all 0.3s ease;
+        }
+        
+        .data-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            border-color: #3b82f6;
+        }
+
+        .blink {
+            animation: blinker 1s linear infinite;
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-300 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header & Actions -->
+        <header class="mb-8 border-b border-gray-800 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <i data-lucide="scan-eye" class="text-blue-400 h-8 w-8"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">System Deep Scan</h1>
+                        <div class="flex items-center gap-2 text-xs font-bold text-green-400">
+                            <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                            LIVE ANALYSIS v1.0
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-400 text-sm max-w-xl">
+                    Client-side analysis of your digital fingerprint. No data is stored on our servers.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+                <button onclick="copyReport()" class="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm font-medium transition-colors text-white group">
+                    <i data-lucide="copy" class="w-4 h-4 text-gray-400 group-hover:text-white"></i> Copy
+                </button>
+                <button onclick="downloadJSON()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 border border-blue-500 rounded-lg text-sm font-medium transition-colors text-white shadow-lg shadow-blue-500/20">
+                    <i data-lucide="download" class="w-4 h-4"></i> Export JSON
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="dashboard">
+
+            <!-- 1. Identity & Network -->
+            <div class="data-card bg-gray-900 border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i data-lucide="globe" class="h-24 w-24"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="network" class="text-blue-400"></i> Network
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Public IP Address</span>
+                        <div id="ip-address" class="text-xl text-blue-400 font-bold flex items-center gap-2 mt-1">
+                            Loading... <span class="blink">_</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Connection</span>
+                            <div id="connection-type" class="text-white mt-1">Unknown</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Latency (RTT)</span>
+                            <div id="rtt-val" class="text-white mt-1">--</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Est. Speed</span>
+                        <div id="downlink-speed" class="text-green-400 font-bold mt-1">Testing...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Device Fingerprint -->
+            <div class="data-card bg-gray-900 border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i data-lucide="laptop" class="h-24 w-24"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="fingerprint" class="text-purple-400"></i> Fingerprint
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">OS Platform</span>
+                        <div id="os-platform" class="text-white mt-1">Detecting...</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">CPU Threads</span>
+                        <div id="cpu-cores" class="text-white mt-1">Unknown</div>
+                    </div>
+                    <div class="pt-2 border-t border-gray-800 mt-2">
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Canvas Hash ID</span>
+                        <div class="text-[10px] text-gray-500 mb-1">Unique GPU rendering signature</div>
+                        <div id="canvas-hash" class="text-yellow-400 font-mono text-sm break-all bg-yellow-400/10 p-2 rounded border border-yellow-400/20">Generating...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. GPU & Graphics -->
+            <div class="data-card bg-gray-900 border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i data-lucide="cpu" class="h-24 w-24"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="gamepad-2" class="text-red-400"></i> Graphics (WebGL)
+                </h2>
+                <div class="space-y-4">
+                     <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Vendor</span>
+                        <div id="gpu-vendor" class="text-white mt-1">Unknown</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Renderer</span>
+                        <div id="gpu-renderer" class="text-white font-bold text-sm mt-1 leading-snug">Accessing GPU...</div>
+                    </div>
+                    <div class="mt-4 p-2 bg-gray-800/50 border border-gray-700 rounded text-[10px] text-gray-400 flex gap-2 items-start">
+                        <i data-lucide="info" class="w-3 h-3 mt-0.5"></i>
+                        <span>This data is extracted via WebGL, often bypassing standard User-Agent spoofing.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Screen & Display -->
+            <div class="data-card bg-gray-900 border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i data-lucide="monitor" class="h-24 w-24"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="maximize" class="text-green-400"></i> Display
+                </h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Resolution</span>
+                            <div id="screen-res" class="text-white font-mono mt-1">0x0</div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Color Depth</span>
+                            <div id="color-depth" class="text-white font-mono mt-1">--</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Window Size</span>
+                        <div id="window-res" class="text-white font-mono mt-1">0x0</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Orientation</span>
+                        <div id="orientation-type" class="text-white mt-1">Unknown</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Hardware & Battery -->
+            <div class="data-card bg-gray-900 border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i data-lucide="battery" class="h-24 w-24"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="zap" class="text-yellow-400"></i> Power & Memory
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Battery Status</span>
+                        <div class="flex items-center gap-3 mt-2">
+                            <div class="flex-1 h-3 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+                                <div id="battery-bar" class="h-full bg-gray-600 w-0 transition-all duration-1000 relative">
+                                    <div class="absolute inset-0 bg-white/20"></div>
+                                </div>
+                            </div>
+                            <span id="battery-level" class="text-sm font-mono font-bold">--%</span>
+                        </div>
+                        <div id="battery-charging" class="text-xs text-gray-500 mt-1 pl-1">Status unknown</div>
+                    </div>
+                    <div class="pt-2">
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Device Memory (RAM)</span>
+                        <div id="device-memory" class="text-white mt-1">Unknown</div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- 6. Location & Time -->
+             <div class="data-card bg-gray-900 border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i data-lucide="map-pin" class="h-24 w-24"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="clock" class="text-blue-400"></i> Locale
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Timezone</span>
+                        <div id="timezone" class="text-white mt-1">Unknown</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Language</span>
+                        <div id="language" class="text-white mt-1">Unknown</div>
+                    </div>
+                    <div class="pt-2">
+                        <button onclick="getGeoLocation()" id="geo-btn" class="w-full py-2 px-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded-lg border border-blue-500/30 text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="crosshair" class="w-4 h-4"></i> Locate Me
+                        </button>
+                        <div id="geo-result" class="mt-2 text-xs text-gray-400 hidden bg-black/30 p-2 rounded border border-gray-800"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. The User Agent String -->
+            <div class="data-card bg-gray-900 border border-gray-800 rounded-xl p-6 relative col-span-1 md:col-span-2 lg:col-span-3">
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="code" class="text-pink-400"></i> Raw User Agent
+                </h2>
+                <div class="bg-black/50 rounded-lg p-4 font-mono text-xs text-green-400 break-all border border-gray-800 shadow-inner leading-relaxed">
+                    <span id="user-agent-raw">Loading...</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 border-t border-gray-800 pt-8 pb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-600">
+                <p>&copy; <script>document.write(new Date().getFullYear())</script> Digital Mirror. All rights reserved.</p>
+                <div class="flex gap-4">
+                    <span>Privacy Policy: No data collected.</span>
+                    <span>Version 1.0.0</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-white text-gray-900 px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 font-bold flex items-center gap-2">
+        <i data-lucide="check-circle" class="text-green-500 w-5 h-5"></i>
+        <span id="toast-msg">Action Successful</span>
+    </div>
+
+    <script>
+        // Global Data Store for Export
+        const reportData = {
+            timestamp: new Date().toISOString(),
+            network: {},
+            device: {},
+            graphics: {},
+            display: {},
+            battery: {},
+            locale: {}
+        };
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Toast Notification
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // 1. Fetch Public IP
+        async function getIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                document.getElementById('ip-address').innerText = data.ip;
+                document.getElementById('ip-address').classList.add('font-mono');
+                reportData.network.ip = data.ip;
+            } catch (error) {
+                document.getElementById('ip-address').innerText = "Blocked / Private";
+                document.getElementById('ip-address').classList.add('text-red-500');
+                reportData.network.ip = "Blocked";
+            }
+        }
+
+        // 2. Parse User Agent & OS
+        function getSystemInfo() {
+            const ua = navigator.userAgent;
+            document.getElementById('user-agent-raw').innerText = ua;
+            reportData.device.userAgent = ua;
+
+            // Platform
+            const platform = navigator.platform || "Unknown";
+            document.getElementById('os-platform').innerText = platform;
+            reportData.device.platform = platform;
+            
+            // CPU Cores
+            const cores = (navigator.hardwareConcurrency || "?") + " Logical Cores";
+            document.getElementById('cpu-cores').innerText = cores;
+            reportData.device.cores = cores;
+            
+            // Device Memory
+            if (navigator.deviceMemory) {
+                const mem = `~${navigator.deviceMemory} GB`;
+                document.getElementById('device-memory').innerText = mem;
+                reportData.battery.memory = mem;
+            } else {
+                document.getElementById('device-memory').innerText = "Not Supported";
+            }
+        }
+
+        // 3. Screen Info
+        function getScreenInfo() {
+            const width = window.screen.width;
+            const height = window.screen.height;
+            const colorDepth = window.screen.colorDepth;
+            const pixelRatio = window.devicePixelRatio;
+
+            document.getElementById('screen-res').innerText = `${width} x ${height}`;
+            document.getElementById('color-depth').innerText = `${colorDepth}-bit (${pixelRatio}x)`;
+            
+            reportData.display.screenResolution = `${width}x${height}`;
+            reportData.display.colorDepth = colorDepth;
+            reportData.display.pixelRatio = pixelRatio;
+            
+            const updateWindow = () => {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                document.getElementById('window-res').innerText = `${w} x ${h}`;
+                reportData.display.windowSize = `${w}x${h}`;
+
+                let orientation = "Landscape";
+                if(window.screen.orientation) {
+                    orientation = window.screen.orientation.type;
+                } else if(window.innerWidth < window.innerHeight) {
+                    orientation = "Portrait";
+                }
+                document.getElementById('orientation-type').innerText = orientation;
+                reportData.display.orientation = orientation;
+            };
+            window.addEventListener('resize', updateWindow);
+            updateWindow();
+        }
+
+        // 4. Connection Info
+        function getConnectionInfo() {
+            if (navigator.connection) {
+                const conn = navigator.connection;
+                const type = conn.effectiveType ? conn.effectiveType.toUpperCase() : "Unknown";
+                const speed = conn.downlink ? `~${conn.downlink} Mbps` : "Unknown";
+                const rtt = conn.rtt ? `${conn.rtt} ms` : "--";
+
+                document.getElementById('connection-type').innerText = type;
+                document.getElementById('downlink-speed').innerText = speed;
+                document.getElementById('rtt-val').innerText = rtt;
+
+                reportData.network.connectionType = type;
+                reportData.network.downlink = speed;
+                reportData.network.rtt = rtt;
+            } else {
+                document.getElementById('connection-type').innerText = "API Not Supported";
+            }
+        }
+
+        // 5. Battery Info
+        async function getBatteryInfo() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    
+                    const updateBattery = () => {
+                        const level = Math.round(battery.level * 100);
+                        document.getElementById('battery-level').innerText = `${level}%`;
+                        
+                        const bar = document.getElementById('battery-bar');
+                        bar.style.width = `${level}%`;
+                        bar.className = `h-full transition-all duration-1000 relative ${level > 50 ? 'bg-green-500' : level > 20 ? 'bg-yellow-500' : 'bg-red-500'}`;
+                        
+                        const status = battery.charging ? "⚡ Charging" : "On Battery";
+                        document.getElementById('battery-charging').innerText = status;
+
+                        reportData.battery.level = `${level}%`;
+                        reportData.battery.status = status;
+                    };
+
+                    updateBattery();
+                    battery.addEventListener('levelchange', updateBattery);
+                    battery.addEventListener('chargingchange', updateBattery);
+                } catch (e) {
+                    document.getElementById('battery-level').innerText = "Protected";
+                }
+            } else {
+                document.getElementById('battery-level').innerText = "N/A";
+            }
+        }
+
+        // 6. Time & Locale
+        function getTimeInfo() {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const lang = navigator.language;
+
+            document.getElementById('timezone').innerText = tz;
+            document.getElementById('language').innerText = lang;
+
+            reportData.locale.timezone = tz;
+            reportData.locale.language = lang;
+        }
+
+        // 7. GeoLocation
+        function getGeoLocation() {
+            const resultDiv = document.getElementById('geo-result');
+            const btn = document.getElementById('geo-btn');
+            
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerText = "Requesting permission...";
+            
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    btn.classList.add('bg-green-500/10', 'text-green-500', 'border-green-500/30');
+                    btn.classList.remove('text-blue-500', 'border-blue-500/30');
+                    btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Located';
+                    lucide.createIcons(); // Refresh icons
+
+                    const lat = position.coords.latitude.toFixed(4);
+                    const lon = position.coords.longitude.toFixed(4);
+                    const acc = position.coords.accuracy;
+
+                    resultDiv.innerHTML = `
+                        <div class="flex justify-between"><span>Lat:</span> <span class="font-mono text-white">${lat}</span></div>
+                        <div class="flex justify-between"><span>Lon:</span> <span class="font-mono text-white">${lon}</span></div>
+                        <div class="flex justify-between text-gray-500"><span>Acc:</span> <span>${acc}m</span></div>
+                    `;
+                    
+                    reportData.locale.gps = { lat, lon, accuracy: acc };
+
+                }, (error) => {
+                    resultDiv.innerText = "Permission Denied or Error.";
+                    resultDiv.classList.add('text-red-400');
+                    reportData.locale.gps = "Denied";
+                });
+            } else {
+                resultDiv.innerText = "Not supported.";
+            }
+        }
+
+        // 8. WebGL Renderer
+        function getWebGLInfo() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) {
+                    document.getElementById('gpu-renderer').innerText = "Not Supported";
+                    return;
+                }
+                
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    document.getElementById('gpu-vendor').innerText = vendor;
+                    document.getElementById('gpu-renderer').innerText = renderer;
+                    
+                    reportData.graphics.vendor = vendor;
+                    reportData.graphics.renderer = renderer;
+                } else {
+                    document.getElementById('gpu-renderer').innerText = "Masked";
+                }
+            } catch(e) {
+                document.getElementById('gpu-renderer').innerText = "Error";
+            }
+        }
+
+        // 9. Canvas Fingerprint
+        function getCanvasFingerprint() {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 200;
+                canvas.height = 50;
+                
+                ctx.textBaseline = "top";
+                ctx.font = "14px 'Arial'";
+                ctx.textBaseline = "alphabetic";
+                ctx.fillStyle = "#f60";
+                ctx.fillRect(125,1,62,20);
+                ctx.fillStyle = "#069";
+                ctx.fillText("Browser Fingerprint", 2, 15);
+                ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+                ctx.fillText("Using GPU Rendering", 4, 17);
+                
+                const dataURI = canvas.toDataURL();
+                
+                let hash = 0;
+                for (let i = 0; i < dataURI.length; i++) {
+                    const char = dataURI.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                
+                const hashStr = Math.abs(hash).toString(16).toUpperCase();
+                document.getElementById('canvas-hash').innerText = hashStr;
+                reportData.graphics.canvasHash = hashStr;
+            } catch(e) {
+                document.getElementById('canvas-hash').innerText = "Blocked";
+            }
+        }
+
+        // Actions
+        async function copyReport() {
+            const text = JSON.stringify(reportData, null, 2);
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast("Report Copied to Clipboard");
+            } catch (err) {
+                showToast("Failed to copy");
+            }
+        }
+
+        function downloadJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reportData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "browser_report_" + new Date().getTime() + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            showToast("Download Started");
+        }
+
+        // Initialization Sequence
+        window.onload = function() {
+            getIP();
+            getSystemInfo();
+            getScreenInfo();
+            getConnectionInfo();
+            getBatteryInfo();
+            getTimeInfo();
+            getWebGLInfo();
+            getCanvasFingerprint();
+        };
+
+    </script>
+</body>
+</html>
